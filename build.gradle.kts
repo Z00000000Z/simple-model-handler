@@ -63,7 +63,7 @@ configure(subprojects) {
                 else break
             }
 
-            archiveBaseName.set(rootProject.name)
+            archiveBaseName.set("smh")
             archiveAppendix.set(hierarchy.map { it.name }.reversed().joinToString("-"))
             archiveVersion.set(rootProject.version as String)
         }

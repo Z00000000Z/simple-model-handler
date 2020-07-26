@@ -10,3 +10,9 @@ dependencies {
     implementation("org.openjfx:javafx-base:$jfxVersion:$jfxPlatform")
     implementation("org.openjfx:javafx-graphics:$jfxVersion:$jfxPlatform")
 }
+
+tasks {
+    java {
+        withSourcesJar()
+    }
+}
