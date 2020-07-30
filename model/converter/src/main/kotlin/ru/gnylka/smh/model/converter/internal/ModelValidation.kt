@@ -8,8 +8,6 @@ internal object ModelValidation {
     private const val TRIANGLE_PART_SIZE = 3
 
     internal fun validateModel(model: Model) {
-        require(model.meshes.size <= 2) { ILLEGAL_MESHES_COUNT }
-
         for (mesh in model.meshes) {
             validateMeshAttributes(mesh.attributes)
             validateMesh(mesh)

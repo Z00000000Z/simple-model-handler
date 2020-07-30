@@ -214,7 +214,9 @@ public final class ModelLoader {
         for (int i = 0; i < indicesSize; i++) {
             short index = input.readShort();
 
-            if (index < 0) {
+            // index may contain negative number due to integer overflow
+            boolean isOverflowed = abs(index) + i > indicesSize;
+            if (index < 0 && !isOverflowed) {
                 int valuesToCopy = abs(index);
 
                 for (int j = 0; j < valuesToCopy; j++)

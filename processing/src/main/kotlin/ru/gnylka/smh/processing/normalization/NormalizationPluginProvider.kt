@@ -1,6 +1,5 @@
 package ru.gnylka.smh.processing.normalization
 
-import org.joml.Quaterniond
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
 import ru.gnylka.smh.processing.ProcessingPluginException
@@ -8,9 +7,6 @@ import ru.gnylka.smh.processing.ProcessingPluginProvider
 import ru.gnylka.smh.processing.data.Model
 
 class NormalizationPluginProvider : ProcessingPluginProvider {
-
-    private val scaleScalar = 0.01
-    private val xAxisRotation = Quaterniond().rotateAxis(-Math.PI * 0.5, 0.0, 0.0, 1.0)!!
 
     private val container = ArgumentsContainer()
 
@@ -31,11 +27,10 @@ class NormalizationPluginProvider : ProcessingPluginProvider {
             - rotated around X axis by PI / 2 radians
      */
     override fun modifyModel(model: Model) = container.run {
-        for ((id, translation, rotation, scale) in model.nodes)
+        for ((id, translation, _, scale) in model.nodes)
             if (nodeIdPattern?.matcher(id)?.matches() != false) {
-                if (normalizeTranslation) translation.mul(scaleScalar)
-                if (normalizeRotation) rotation.mul(xAxisRotation)
-                if (normalizeScale) scale.mul(scaleScalar)
+                if (normalizeTranslation) translation.mul(0.01)
+                if (normalizeScale) scale.mul(0.01)
             }
 
         model

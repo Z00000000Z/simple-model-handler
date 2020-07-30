@@ -12,6 +12,9 @@ import javafx.scene.shape.Mesh;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Translate;
 import org.joml.AxisAngle4d;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
@@ -95,7 +98,8 @@ public final class FXHandler {
 
     private void createPart(short[] part) {
         boolean noNormals = model.normalsCount == 0;
-        boolean noTex = model.texCoordsCount == 0;
+        boolean noTex = Short.toUnsignedInt(part[0]) >= model.texCoordsCount;
+        int partSize = part.length;
 
         var mesh = new TriangleMesh(noNormals ?
                 VertexFormat.POINT_TEXCOORD :
@@ -103,41 +107,44 @@ public final class FXHandler {
 
         var meshPoints = mesh.getPoints();
         int pointSize = mesh.getPointElementSize();
-        meshPoints.ensureCapacity(part.length * pointSize);
+        meshPoints.ensureCapacity(partSize * pointSize);
 
         var meshNormals = mesh.getNormals();
         int normalSize = mesh.getNormalElementSize();
-        meshNormals.ensureCapacity(part.length * normalSize);
+        meshNormals.ensureCapacity(partSize * normalSize);
 
         var meshTex = mesh.getTexCoords();
         int texCoordSize = mesh.getTexCoordElementSize();
-        meshTex.ensureCapacity(part.length * texCoordSize);
+        meshTex.ensureCapacity(partSize * texCoordSize);
 
         var points = model.points;
         var normals = model.normals;
         var texCoords = model.texCoords;
 
         var meshFaces = mesh.getFaces();
-        meshFaces.ensureCapacity(pointSize / 3 * 2);
+        meshFaces.ensureCapacity(partSize * (noNormals ? 2 : 3));
 
         if (noTex) meshTex.addAll(0, 0);
 
         int lastFaceIndex = 0;
-        var holder = new int[1];    // to avoid creation of arrays on varargs
+        var holder = new int[1];    // to avoid allocation of arrays on varargs
         for (var index : part) {
-            meshPoints.addAll(points, index * pointSize, pointSize);
+            // due to integer overflow, a negative number may be presented in index
+            int unsignedIndex = Short.toUnsignedInt(index);
+
+            meshPoints.addAll(points, unsignedIndex * pointSize, pointSize);
             holder[0] = lastFaceIndex;
             meshFaces.addAll(holder);
 
             if (!noNormals) {
-                meshNormals.addAll(normals, index * normalSize, normalSize);
+                meshNormals.addAll(normals, unsignedIndex * normalSize, normalSize);
                 holder[0] = lastFaceIndex;
                 meshFaces.addAll(holder);
             }
 
             if (noTex) holder[0] = 0;
             else {
-                meshTex.addAll(texCoords, index * texCoordSize, texCoordSize);
+                meshTex.addAll(texCoords, unsignedIndex * texCoordSize, texCoordSize);
                 holder[0] = lastFaceIndex;
             }
             meshFaces.addAll(holder);
@@ -174,21 +181,18 @@ public final class FXHandler {
         var nodeGroup = new Group();
         nodeGroup.setId(node.id);
 
+        var transforms = nodeGroup.getTransforms();
         var translation = createVector(node.translation);
         var rotation = createQuaternion(node.rotation);
         var scale = createVector(node.scale);
 
-        nodeGroup.setTranslateX(translation.x);
-        nodeGroup.setTranslateY(translation.y);
-        nodeGroup.setTranslateZ(translation.z);
-
         var axisAngle = rotation.get(new AxisAngle4d());
-        nodeGroup.setRotationAxis(new Point3D(axisAngle.x, axisAngle.y, axisAngle.z));
-        nodeGroup.setRotate(Math.toDegrees(axisAngle.angle));
-
-        nodeGroup.setScaleX(scale.x);
-        nodeGroup.setScaleY(scale.y);
-        nodeGroup.setScaleZ(scale.z);
+        transforms.add(new Translate(translation.x, translation.y, translation.z));
+        transforms.add(new Rotate(
+                Math.toDegrees(axisAngle.angle),
+                new Point3D(axisAngle.x, axisAngle.y, axisAngle.z)
+        ));
+        transforms.add(new Scale(scale.x, scale.y, scale.z));
 
         var nodePartsGroup = createNodeParts(node);
         nodeGroup.getChildren().add(nodePartsGroup);

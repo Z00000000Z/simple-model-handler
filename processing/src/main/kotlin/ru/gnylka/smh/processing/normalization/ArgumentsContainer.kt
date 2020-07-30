@@ -24,14 +24,6 @@ class ArgumentsContainer : Runnable {
     var normalizeTranslation: Boolean = true
 
     @JvmField
-    @Option(names = ["-r", "--no-rotation"],
-            defaultValue = "true",
-            description = ["Normalize rotation of root nodes"],
-            order = 1,
-            negatable = true)
-    var normalizeRotation: Boolean = true
-
-    @JvmField
     @Option(names = ["-s", "--no-scale"],
             defaultValue = "true",
             description = ["Normalize scale of root nodes"],

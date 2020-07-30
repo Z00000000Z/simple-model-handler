@@ -40,4 +40,4 @@ const val DUPLICATE_PLUGINS = "Plugins must have unique names (found %s plugins 
 const val INCORRECT_PLUGIN_RESULT = "Plugin %s returned null instead of model"
 
 fun throwWith(message: String?, vararg formatValues: Any?): Nothing =
-        throw ProcessingException(message?.format(formatValues))
+        throw ProcessingException(message?.format(*formatValues))

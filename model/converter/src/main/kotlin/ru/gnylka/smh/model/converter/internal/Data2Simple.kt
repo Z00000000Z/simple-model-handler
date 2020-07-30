@@ -65,21 +65,21 @@ internal class Data2Simple internal constructor(
         Meshes with TEXCOORD attribute are always first
      */
     private fun sortMeshes(meshes: List<Mesh>): List<Mesh> {
-        val posNorAttrs = listOf(POSITION, NORMAL)
-        val posNorTexAttrs = MeshAttribute.values().toList()
+        val posNorAttrs = setOf(POSITION, NORMAL)
+        val posNorTexAttrs = MeshAttribute.values().toSet()
 
         val posNorMeshes = meshes.filter {
-            it.attributes.containsAll(posNorAttrs)
-        }.toMutableList()
-
-        val posNorTexMeshes = posNorMeshes.filter {
-            TEXCOORD in it.attributes
+            it.attributes.containsAll(posNorAttrs) &&
+                    it.attributes.size == posNorAttrs.size
         }
-        posNorMeshes -= posNorTexMeshes
 
-        require(posNorMeshes.size <= 1 || posNorTexMeshes.size <= 1) {
+        val posNorTexMeshes = meshes.filter {
+            it.attributes.containsAll(posNorTexAttrs) &&
+                    it.attributes.size == posNorTexAttrs.size
+        }
+
+        if (posNorMeshes.size + posNorTexMeshes.size != meshes.size)
             ILLEGAL_MESH_ATTRIBUTES.format(posNorAttrs, posNorTexAttrs)
-        }
 
         return posNorTexMeshes + posNorMeshes
     }
@@ -94,7 +94,7 @@ internal class Data2Simple internal constructor(
 
         val pointsArray = getValuesForAttribute(POSITION, attributes, vertices, valuesPerVertex)
         points.addAll(pointsArray)
-        indicesOffset += pointsArray.size
+        indicesOffset += pointsArray.size / POSITION.size
 
         val normalsArray = getValuesForAttribute(NORMAL, attributes, vertices, valuesPerVertex)
         normals.addAll(normalsArray)

@@ -1,6 +1,5 @@
 package ru.gnylka.smh.model.converter.internal
 
-const val ILLEGAL_MESHES_COUNT = "Model must not contain more than 2 meshes"
 const val MULTIPLE_MATERIALS = "Material %s is repeated %s times"
 const val MULTIPLE_DIFFUSE_TEXTURES = "Diffuse texture %s is repeated %s times"
 const val MULTIPLE_SPECULAR_TEXTURES = "Specular texture %s is repeated %s times"
