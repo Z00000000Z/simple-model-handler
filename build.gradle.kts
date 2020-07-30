@@ -1,7 +1,7 @@
 import org.gradle.internal.os.OperatingSystem
 
 group = "ru.gnylka.smh"
-version = "1.0"
+version = "1.1"
 
 val kotlinVersion by rootProject.extra("1.3.72")
 val picocliVersion by rootProject.extra("4.4.0")
