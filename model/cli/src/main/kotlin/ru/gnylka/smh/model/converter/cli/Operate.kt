@@ -1,14 +1,9 @@
 package ru.gnylka.smh.model.converter.cli
 
 import ru.gnylka.smh.loader.loadModelFrom
-import ru.gnylka.smh.model.converter.convertModel
-import ru.gnylka.smh.model.converter.optimizeModel
-import ru.gnylka.smh.model.converter.writeModel
+import ru.gnylka.smh.model.converter.*
 import ru.gnylka.smh.model.data.SimpleModel
-import ru.gnylka.smh.processing.IllegalPropertyException
-import ru.gnylka.smh.processing.ProcessingException
-import ru.gnylka.smh.processing.ProcessingPluginException
-import ru.gnylka.smh.processing.processModel
+import ru.gnylka.smh.processing.*
 import java.io.IOException
 import java.io.OutputStream
 import java.nio.file.Files
@@ -87,7 +82,7 @@ private fun removeNormals(model: SimpleModel) = model.run {
     SimpleModel(
             points, pointsKeys, pointsIndices, pointsCount,
             empty, empty, 0,
-            texCoords, texCoordsIndices, texCoordsCount,
+            texCoords, texCoordsKeys, texCoordsIndices, texCoordsCount,
             parts, facesCount,
             materials, nodes, globalProperties
     )

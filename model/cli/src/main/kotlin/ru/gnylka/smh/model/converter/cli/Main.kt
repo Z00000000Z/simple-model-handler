@@ -10,6 +10,7 @@ import java.util.*
 import java.util.logging.LogManager.getLogManager
 import java.util.logging.Logger
 import kotlin.math.min
+import kotlin.system.exitProcess
 
 private const val MAX_FAILED_EXECUTORS_TO_SHOW = 5
 private var isDebugMode = false
@@ -39,7 +40,7 @@ fun main(args: Array<String>) {
             printAvailablePlugins()
         }
 
-        return
+        exitProcess(exitValue)
     }
 
     val sessionsData = getSessionsData(container) ?: return

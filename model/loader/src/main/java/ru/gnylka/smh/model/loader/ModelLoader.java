@@ -33,6 +33,7 @@ public final class ModelLoader {
     private float[] normalsIndices;
 
     private float[] texCoords;
+    private float[] texCoordsKeys;
     private float[] texCoordsIndices;
 
     private short[][] parts;
@@ -60,6 +61,7 @@ public final class ModelLoader {
         loader.readPointsKeys();
         loader.readPointsIndices();
         loader.readNormalsIndices();
+        loader.readTexCoordsKeys();
         loader.readTexCoordsIndices();
         loader.readPoints();
         loader.readNormals();
@@ -72,7 +74,7 @@ public final class ModelLoader {
         return new SimpleModel(
                 loader.points, emptyArray, emptyArray, loader.points.length / POINT_SIZE,
                 loader.normals, emptyArray, loader.normals.length / NORMAL_SIZE,
-                loader.texCoords, emptyArray, loader.texCoords.length / TEX_COORD_SIZE,
+                loader.texCoords, emptyArray, emptyArray, loader.texCoords.length / TEX_COORD_SIZE,
                 loader.parts, loader.facesCount,
                 loader.materials, loader.nodes, loader.globalProperties
         );
@@ -100,8 +102,12 @@ public final class ModelLoader {
         normalsIndices = readFloatArrayWithSize(NORMAL_SIZE);
     }
 
+    private void readTexCoordsKeys() throws IOException {
+        texCoordsKeys = readFloatArrayWithSize(1);
+    }
+
     private void readTexCoordsIndices() throws IOException {
-        texCoordsIndices = readFloatArrayWithSize(TEX_COORD_SIZE);
+        texCoordsIndices = readFloatArray(texCoordsKeys.length * TEX_COORD_SIZE);
     }
 
     private void readPoints() throws IOException {
@@ -112,8 +118,8 @@ public final class ModelLoader {
             var value = input.readFloat();
 
             if (Float.isNaN(value)) {
-                if (i < 3) throw new IllegalStateException(
-                        "Unexpected Float.NaN before 3 values were read"
+                if (i < POINT_SIZE) throw new IllegalStateException(
+                        "Unexpected Float.NaN before " + POINT_SIZE + " values were read"
                 );
 
                 System.arraycopy(
@@ -151,8 +157,8 @@ public final class ModelLoader {
                         NORMAL_SIZE);
                 i += NORMAL_SIZE - 1;
             } else {
-                if (i < 3) throw new IllegalStateException(
-                        "Unexpected value higher than 1 before 3 values were read");
+                if (i < NORMAL_SIZE) throw new IllegalStateException(
+                        "Unexpected value >1 before " + NORMAL_SIZE + " values were read");
 
                 int normalsToCopy = Float.isNaN(value) ? 1 : (int) value;
                 for (int j = 0; j < normalsToCopy; j++)
@@ -173,26 +179,26 @@ public final class ModelLoader {
         for (int i = 0; i < texCoordsSize; i++) {
             var value = input.readFloat();
 
-            if (abs(value) <= 1.0) texCoords[i] = value;
-            else if (value <= -2.0) {
-                int texCoordsIndex = ((int) -value) - 2;
+            if (Float.isNaN(value)) {
+                if (i < TEX_COORD_SIZE) throw new IllegalStateException(
+                        "Unexpected Float.NaN before " + TEX_COORD_SIZE + " values were read"
+                );
+
                 System.arraycopy(
-                        texCoordsIndices, texCoordsIndex * TEX_COORD_SIZE,
+                        texCoords, i - TEX_COORD_SIZE,
                         texCoords, i,
                         TEX_COORD_SIZE);
+
                 i += TEX_COORD_SIZE - 1;
             } else {
-                if (i < 2) throw new IllegalStateException(
-                        "Unexpected value higher than 1 before 2 values were read");
-
-                int texCoordsToCopy = Float.isNaN(value) ? 1 : (int) value;
-                for (int j = 0; j < texCoordsToCopy; j++)
+                int texCoordsIndex = Arrays.binarySearch(texCoordsKeys, value);
+                if (texCoordsIndex >= 0) {
                     System.arraycopy(
-                            texCoords, i - TEX_COORD_SIZE,
-                            texCoords, i + j * TEX_COORD_SIZE,
+                            texCoordsIndices, texCoordsIndex * TEX_COORD_SIZE,
+                            texCoords, i,
                             TEX_COORD_SIZE);
-
-                i += texCoordsToCopy * TEX_COORD_SIZE - 1;
+                    i += TEX_COORD_SIZE - 1;
+                } else texCoords[i] = value;
             }
         }
     }

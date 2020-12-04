@@ -4,8 +4,6 @@ dependencies {
     implementation(project(":model:data"))
 }
 
-tasks {
-    java {
-        withSourcesJar()
-    }
+java {
+    withSourcesJar()
 }

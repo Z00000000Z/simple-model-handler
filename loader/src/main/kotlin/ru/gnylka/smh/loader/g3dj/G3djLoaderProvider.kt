@@ -16,6 +16,7 @@ class G3djLoaderProvider : LoaderProvider {
         val g3djModel = Files.newBufferedReader(filePath).use {
             gson.fromJson(it, G3djModel::class.java)
         }
+
         return G3dj2Input(g3djModel).createInputModel()
     }
 

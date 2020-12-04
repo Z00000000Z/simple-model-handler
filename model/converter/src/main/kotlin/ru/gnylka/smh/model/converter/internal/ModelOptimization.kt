@@ -18,6 +18,7 @@ internal class ModelOptimization internal constructor(
 
     private val MIN_REPEAT_COUNT = 3
     private val MIN_POINT_REPEAT_COUNT = MIN_REPEAT_COUNT + 1
+    private val MIN_TEX_COORD_REPEAT_COUNT = MIN_REPEAT_COUNT + 1
 
     private val points = simpleModel.points
     private lateinit var newPoints: MutableList<Float>
@@ -30,7 +31,8 @@ internal class ModelOptimization internal constructor(
 
     private val texCoords = simpleModel.texCoords
     private lateinit var newTexCoords: MutableList<Float>
-    private val texCoordsIndices = mutableListOf<List<Float>>()
+    // keep texCoordsIndices sorted for faster loading using binary search
+    private val texCoordsIndices = sortedMapOf<Float, List<Float>>()
 
     private val random = Random()
 
@@ -41,17 +43,19 @@ internal class ModelOptimization internal constructor(
         newPoints =
                 if (optimizePoints) optimizePoints()
                 else points.toMutableList()
-        if (indexPoints) indexPoints(newPoints)
+        if (indexPoints) index(newPoints, POSITION.size,
+                MIN_POINT_REPEAT_COUNT, pointsIndices)
 
         newNormals =
                 if (optimizeNormals) optimizeNormals()
                 else normals.toMutableList()
-        if (indexNormals) index(newNormals, NORMAL.size, normalsIndices)
+        if (indexNormals) indexNormals(newNormals, NORMAL.size, normalsIndices)
 
         newTexCoords =
                 if (optimizeTexCoords) optimizeTexCoords()
                 else texCoords.toMutableList()
-        if (indexTexCoords) index(newTexCoords, TEXCOORD.size, texCoordsIndices)
+        if (indexTexCoords) index(newTexCoords, TEXCOORD.size,
+                MIN_TEX_COORD_REPEAT_COUNT, texCoordsIndices)
 
         val newParts =
                 if (optimizeParts) simpleModel.parts.map(::optimizeFaces)
@@ -68,7 +72,8 @@ internal class ModelOptimization internal constructor(
                 simpleModel.normalsCount,
 
                 newTexCoords.toFloatArray(),
-                texCoordsIndices.flatten().toFloatArray(),
+                texCoordsIndices.keys.toFloatArray(),
+                texCoordsIndices.values.flatten().toFloatArray(),
                 simpleModel.texCoordsCount,
 
                 newParts.toTypedArray(),
@@ -177,27 +182,35 @@ internal class ModelOptimization internal constructor(
         return newTexCoords
     }
 
-    private fun indexPoints(points: MutableList<Float>) {
+    private fun index(
+            values: MutableList<Float>,
+            groupSize: Int,
+            minRepeatCount: Int,
+            indicesDest: MutableMap<Float, List<Float>>
+    ) {
         val usedValues = mutableListOf<Float>()
-        usedValues.addAll(points)
-        val indices = getRepeatedValues(points, POSITION.size) { !it.isNaN()}
-                .filterValues { it >= MIN_POINT_REPEAT_COUNT }
+        usedValues.addAll(values)
+        val indices = getRepeatedValues(values, groupSize) { !it.isNaN() }
+                .filterValues { it >= minRepeatCount }
                 .keys.map {
                     val newUniqueValue = generateUniqueValue(usedValues)
                     usedValues += newUniqueValue
                     newUniqueValue to it
-                }.toMap(pointsIndices)
+                }.toMap(indicesDest)
+        val indicesKeys = indices.keys
 
         indices.forEach { (replaceValue, valuesGroup) ->
-            replaceAllSubLists(points, valuesGroup, replaceValue) {
-                !it.isNaN() && it !in pointsIndices.keys
+            replaceAllSubLists(values, valuesGroup, replaceValue) {
+                !it.isNaN() && it !in indicesKeys
             }
         }
     }
 
-    private fun index(values: MutableList<Float>,
-                      valuesGroupSize: Int,
-                      indexDestination: MutableList<List<Float>>) {
+    private fun indexNormals(
+            values: MutableList<Float>,
+            valuesGroupSize: Int,
+            indexDestination: MutableList<List<Float>>
+    ) {
         val isNormal = { value: Float -> value in -1f..1f }
 
         getRepeatedValues(values, valuesGroupSize, isNormal)

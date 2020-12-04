@@ -4,10 +4,7 @@ import org.joml.Quaterniond
 import org.joml.Vector3d
 import ru.gnylka.smh.model.converter.internal.ModelValidation.getValuesPerVertex
 import ru.gnylka.smh.model.converter.internal.ModelValidation.validateModel
-import ru.gnylka.smh.model.data.SimpleMaterial
-import ru.gnylka.smh.model.data.SimpleModel
-import ru.gnylka.smh.model.data.SimpleNode
-import ru.gnylka.smh.model.data.SimpleNodePart
+import ru.gnylka.smh.model.data.*
 import ru.gnylka.smh.processing.data.*
 import ru.gnylka.smh.processing.data.MeshAttribute.*
 import java.util.*

@@ -8,5 +8,4 @@ include(":loader",
         ":model:loader",
         ":utils",
         ":model:fx-handler",
-        ":test-apps:test-jfx"
-)
+        ":test-apps:test-jfx")

@@ -1,14 +1,8 @@
 package ru.gnylka.smh.model.converter.internal
 
-import ru.gnylka.smh.model.data.SimpleMaterial
-import ru.gnylka.smh.model.data.SimpleModel
-import ru.gnylka.smh.model.data.SimpleNode
-import ru.gnylka.smh.model.data.SimpleNodePart
+import ru.gnylka.smh.model.data.*
 import ru.gnylka.smh.processing.data.MeshAttribute.*
-import ru.gnylka.smh.utils.appendf
-import ru.gnylka.smh.utils.indentBy
-import ru.gnylka.smh.utils.plus
-import ru.gnylka.smh.utils.plusAssign
+import ru.gnylka.smh.utils.*
 import java.io.OutputStream
 import java.io.PrintWriter
 import kotlin.math.abs
@@ -25,16 +19,13 @@ internal class TextWriting internal constructor(
 
     private val sb = StringBuilder()
 
-    private val maxPointKey = simpleModel.pointsKeys.lastOrNull()
-            ?.let { "%f".format(it).length } ?: 3
-
-    private val maxPointIndex = maxFloatLength(simpleModel.pointsIndices)
-
-    private val maxNormalIndex = (simpleModel.normalsIndices.size / NORMAL.size)
+    private val maxPoint = maxFloatLength(simpleModel.points + simpleModel.pointsIndices)
+    private val maxPointKey = maxFloatLength(simpleModel.pointsKeys, positive = true)
+    private val maxNormal = maxFloatLength(simpleModel.normals + simpleModel.normalsIndices)
+    private val maxNormalKey = max(0, simpleModel.normalsIndices.size / NORMAL.size - 1)
             .toString().length
-
-    private val maxTexCoordIndex = (simpleModel.texCoordsIndices.size / TEXCOORD.size)
-            .toString().length
+    private val maxTexCoord = maxFloatLength(simpleModel.texCoords + simpleModel.texCoordsIndices)
+    private val maxTexCoordKey = maxFloatLength(simpleModel.texCoordsKeys, positive = true)
 
     internal fun writeModelAsText(output: OutputStream) {
         val writer = PrintWriter(output)
@@ -44,7 +35,7 @@ internal class TextWriting internal constructor(
     }
 
     private fun SimpleModel.getData(): String {
-        sb.setLength(0)
+        sb.clear()
 
         writeGlobalProperties()
 
@@ -60,76 +51,73 @@ internal class TextWriting internal constructor(
         writeMaterials()
         writeNodes()
 
-        val str = sb.toString()
-        sb.clear()
-        return str
+        return sb.toString()
     }
 
     private fun SimpleModel.writeGlobalProperties() {
         sb + "Global properties (size: " + globalProperties.size += "):"
         sb + getProperties(globalProperties).indentBy(indent)
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun SimpleModel.writePointsIndices() {
         sb + "Points indices (size: " + pointsKeys.size += "):"
 
-        val k = maxPointKey
-        val l = maxPointIndex
-
+        val l = maxPoint
         for (i in pointsKeys.indices)
-            sb.appendf("%s%-${k}f = [%${l}f, %${l}f, %${l}f]%n",
+            sb.appendf("%s%-${maxPointKey}.6f = [% ${l}.6f, % ${l}.6f, % ${l}.6f]%n",
                     indent, pointsKeys[i],
                     pointsIndices[i * 3 + 0],
                     pointsIndices[i * 3 + 1],
                     pointsIndices[i * 3 + 2])
 
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun SimpleModel.writeNormalsIndices() {
-        val size = normalsIndices.size / 3
+        val size = normalsIndices.size / NORMAL.size
         sb + "Normals indices (size: " + size += "):"
 
+        val l = maxNormal
         for (i in 0 until size)
-            sb.appendf("%s[%-${maxNormalIndex}d] = [%-7.5f, %-7.5f, %-7.5f]%n",
+            sb.appendf("%s%-${maxNormalKey}i = [% ${l}.6f, % ${l}.6f, % ${l}.6f]%n",
                     indent, i,
                     normalsIndices[i * 3 + 0],
                     normalsIndices[i * 3 + 1],
                     normalsIndices[i * 3 + 2])
 
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun SimpleModel.writeTexCoordsIndices() {
-        val size = texCoordsIndices.size / 2
-        sb + "Texture coordinates indices (size: " + size += "):"
+        sb + "Texture coordinates indices (size: " + texCoordsIndices.size += "):"
 
-        for (i in 0 until size)
-            sb.appendf("%s[%-${maxTexCoordIndex}d] = [%-7.5f, %-7.5f]%n",
-                    indent, i,
+        val l = maxTexCoord
+        for (i in texCoordsKeys.indices)
+            sb.appendf("%s%-${maxTexCoordKey}.6f = [% ${l}.6f, % ${l}.6f]%n",
+                    indent, texCoordsKeys[i],
                     texCoordsIndices[i * 2 + 0],
                     texCoordsIndices[i * 2 + 1])
 
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun SimpleModel.writePoints() {
         sb + "Points (size: " + pointsCount + ", values: " + pointsCount * POSITION.size += "):"
-        sb += writeArray(points, POSITION.size, maxPointKey,
-                { if (it.isNaN()) 1 else 0 },
-                { if (it in pointsKeys) it else Float.NaN }
+        sb += writeArray(points, POSITION.size, maxPoint, maxPointKey,
+                { value -> if (value.isNaN()) 1 else 0 },
+                { value -> if (pointsKeys.any { it == value }) value else Float.NaN }
         )
     }
 
     private fun SimpleModel.writeNormals() {
         sb + "Normals (size: " + normalsCount + ", values: " + normalsCount * NORMAL.size += "):"
-        sb += writeArray(normals, NORMAL.size, -1, {
-            if (it.isNaN()) 1
-            else if (it > 1.0) it.toInt()
+        sb += writeArray(normals, NORMAL.size, maxNormal, maxNormalKey, { value ->
+            if (value.isNaN()) 1
+            else if (value > 1.0) value.toInt()
             else 0
-        }, {
-            if (it < -1.0) abs(it) - 2
+        }, { value ->
+            if (value < -1.0) abs(value) - 2
             else Float.NaN
         })
     }
@@ -137,14 +125,10 @@ internal class TextWriting internal constructor(
     private fun SimpleModel.writeTexCoords() {
         sb + "Texture coordinates (size: " + texCoordsCount + ", values: " +
                 texCoordsCount * TEXCOORD.size += "):"
-        sb += writeArray(texCoords, TEXCOORD.size, -1, {
-            if (it.isNaN()) 1
-            else if (it > 1.0) it.toInt()
-            else 0
-        }, {
-            if (it < -1.0) abs(it) - 2
-            else Float.NaN
-        })
+        sb += writeArray(texCoords, TEXCOORD.size, maxTexCoord, maxTexCoordKey,
+                { value -> if (value.isNaN()) 1 else 0 },
+                { value -> if (texCoordsKeys.any { it == value }) value else Float.NaN }
+        )
     }
 
     private fun SimpleModel.writeParts() {
@@ -155,7 +139,7 @@ internal class TextWriting internal constructor(
             sb + str.indentBy(indent)
 
         }
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun getPartFaces(partFaces: ShortArray): String {
@@ -172,7 +156,7 @@ internal class TextWriting internal constructor(
             val rem = (i + offset) % 3
             if (value < 0) {
                 previousNegative = true
-                if (rem != 0) strB.appendln()
+                if (rem != 0) strB.appendLine()
                 strB + formatStr.format(value) += ','
                 offset += -value - 1
                 offset %= 3
@@ -203,7 +187,7 @@ internal class TextWriting internal constructor(
             val str = "Material[$i]:\n" + material.getMaterial().indentBy(indent)
             sb + str.indentBy(indent)
         }
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun SimpleMaterial.getMaterial(): String {
@@ -228,7 +212,7 @@ internal class TextWriting internal constructor(
             val str = "Node[$i]:\n" + node.getNode().indentBy(indent)
             sb + str.indentBy(indent)
         }
-        sb.appendln()
+        sb.appendLine()
     }
 
     private fun SimpleNode.getNode(): String {
@@ -275,22 +259,21 @@ internal class TextWriting internal constructor(
 
     private fun getIndexLength(array: ShortArray) = array.run {
         if (isEmpty()) 1
-        else max("% 1d".format(min()!!).length,
-                "% 1d".format(max()!!).length)
+        else max("% 1d".format(minOrNull()!!).length,
+                "% 1d".format(maxOrNull()!!).length)
     }
 
-    private fun writeArray(array: FloatArray,
-                           valuesPerLine: Int,
-                           maxIndex: Int,
-                           isRepeated: (Float) -> Int,
-                           isIndexed: (Float) -> Float): String {
+    private fun writeArray(
+            array: FloatArray,
+            valuesPerLine: Int,
+            maxLength: Int,
+            maxKeyLength: Int,
+            isRepeated: (Float) -> Int,
+            isIndexed: (Float) -> Float
+    ): String {
         val strB = StringBuilder()
         var offset = 0
         var previous = PreviousValue.COMMON
-        val l = maxFloatLength(array)
-        val indexedMax =
-                if (maxIndex == -1) l
-                else maxIndex
 
         for ((i, value) in array.withIndex()) {
             val repeated = isRepeated(value)
@@ -305,13 +288,13 @@ internal class TextWriting internal constructor(
             val indexed = isIndexed(value)
             if (!indexed.isNaN()) {
                 previous = PreviousValue.INDEXED
-                strB += "[%${indexedMax}f]".format(indexed)
+                strB += "[%-${maxKeyLength}.6f]".format(indexed)
                 offset += valuesPerLine - 1
                 offset %= valuesPerLine
             } else {
                 previous = PreviousValue.COMMON
                 val isLast = (i + offset) % valuesPerLine == valuesPerLine - 1
-                strB + "% ${l}f".format(value) + ',' +
+                strB + "% ${maxLength}.6f".format(value) + ',' +
                         if (isLast) '\n'
                         else ' '
             }
@@ -323,14 +306,18 @@ internal class TextWriting internal constructor(
         return strB.toString()
     }
 
-    // ----- Help functions -----
+    // ----- Help functions ----- //
 
     private fun StringBuilder.removeLast(subString: String) {
         val lastSubStrIndex = lastIndexOf(subString)
         delete(lastSubStrIndex, lastSubStrIndex + subString.length)
     }
 
-    private fun maxFloatLength(floats: FloatArray): Int =
-            floats.map { "% 1f".format(it).length }.max() ?: 4
+    private fun maxFloatLength(floats: FloatArray, positive: Boolean = false): Int {
+        val formatStr = if (positive) "%1.6f" else "% 1.6f"
+        return floats.map { formatStr.format(it).length }
+                .maxOrNull()
+                ?: if (positive) 3 else 4
+    }
 
 }

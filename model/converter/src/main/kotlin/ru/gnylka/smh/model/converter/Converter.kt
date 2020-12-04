@@ -1,9 +1,6 @@
 package ru.gnylka.smh.model.converter
 
-import ru.gnylka.smh.model.converter.internal.BinaryWriting
-import ru.gnylka.smh.model.converter.internal.Data2Simple
-import ru.gnylka.smh.model.converter.internal.ModelOptimization
-import ru.gnylka.smh.model.converter.internal.TextWriting
+import ru.gnylka.smh.model.converter.internal.*
 import ru.gnylka.smh.model.data.SimpleModel
 import ru.gnylka.smh.processing.data.Model
 import java.io.OutputStream
@@ -66,7 +63,7 @@ fun convertModel(
  * ## Normals indexing
  *
  * If the same normal is encountered more than [ModelOptimization.MIN_REPEAT_COUNT] times in
- * [SimpleModel.normals], than add it to [ModelOptimization.normalsIndices] and replace with x
+ * [SimpleModel.normals], then add it to [ModelOptimization.normalsIndices] and replace with x
  *
  * Where x = -(normalsIndices's previous size / 3 + 2)
  *
@@ -87,16 +84,17 @@ fun convertModel(
  *
  * ## Texture coordinates indexing
  *
- * If the same texture coordinate is encountered more than [ModelOptimization.MIN_REPEAT_COUNT]
- * times in [ModelOptimization.texCoords], then add it to [ModelOptimization.texCoordsIndices]
- * and replace with x
- *
- * Where x = -(texCoordsIndices's previous size / 2 + 2)
+ * If the same texture coordinate is encountered more than
+ * [ModelOptimization.MIN_TEX_COORD_REPEAT_COUNT] times in [ModelOptimization.texCoords],
+ * then generate a unique key (key is essentially a float value,
+ * which [SimpleModel.texCoords] does not contain), replace texture coordinate's values
+ * with this key and put key to [SimpleModel.texCoordsKeys]
+ * and texture coordinate's values to [SimpleModel.texCoordsIndices]
  *
  *      0.8 0.9 0.1
- *      0.9 0.4 0.4   <- replace with x (-2.0)
+ *      0.9 0.4 0.4   <- replace with 6.7 for instance
  *      0.2 0.9 0.6
- *      0.9 0.4 0.4   <- replace with x (-2.0)
+ *      0.9 0.4 0.4   <- replace with 6.7 for instance
  *
  * ## Parts optimization
  *
@@ -116,6 +114,7 @@ fun convertModel(
  * @param indexNormals use normals indexing
  * @param optimizeTexCoords use texture coordinates optimization
  * @param indexTexCoords use texture coordinates indexing
+ * Note: texture coordinates indexing can seriously slow down model loading. Use with caution!
  * @param optimizeParts use parts optimization
  *
  * @return a new model with optimizations applied

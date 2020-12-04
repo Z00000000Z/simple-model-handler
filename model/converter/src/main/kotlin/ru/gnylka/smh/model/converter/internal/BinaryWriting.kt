@@ -1,8 +1,6 @@
 package ru.gnylka.smh.model.converter.internal
 
-import ru.gnylka.smh.model.data.SimpleMaterial
-import ru.gnylka.smh.model.data.SimpleModel
-import ru.gnylka.smh.model.data.SimpleNode
+import ru.gnylka.smh.model.data.*
 import ru.gnylka.smh.processing.data.MeshAttribute.NORMAL
 import ru.gnylka.smh.processing.data.MeshAttribute.TEXCOORD
 import java.io.DataOutputStream

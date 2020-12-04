@@ -6,7 +6,7 @@ import ru.gnylka.smh.model.converter.cli.OutputFileType
 import java.nio.file.Path
 
 @Command(name = "smh-model",
-        version = ["1.0"],
+        version = ["1.2"],
         description = [
             "A CLI utility to convert different model files to .smhmt and .smhmb formats"
         ],
@@ -61,7 +61,7 @@ class ArgumentsContainer : Runnable {
             paramLabel = "<plugin-name>",
             description = ["A comma-separated list of plugins to use"],
             split = ",",
-            arity = "0..*",
+            arity = "1",
             order = 4)
     var usePlugins: Array<String>? = null
 
