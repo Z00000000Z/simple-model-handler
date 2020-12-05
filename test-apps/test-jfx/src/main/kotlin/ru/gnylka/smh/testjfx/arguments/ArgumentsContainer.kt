@@ -5,7 +5,7 @@ import picocli.CommandLine.*
 import java.nio.file.Path
 
 @Command(name = "smh-model-viewer",
-        version = ["1.0"],
+        version = ["1.2"],
         description = ["A JavaFX GUI application to view .smhmb models"],
         sortOptions = false,
         showDefaultValues = true,

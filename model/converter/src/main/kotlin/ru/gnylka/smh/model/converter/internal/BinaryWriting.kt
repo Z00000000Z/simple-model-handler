@@ -2,7 +2,6 @@ package ru.gnylka.smh.model.converter.internal
 
 import ru.gnylka.smh.model.data.*
 import ru.gnylka.smh.processing.data.MeshAttribute.NORMAL
-import ru.gnylka.smh.processing.data.MeshAttribute.TEXCOORD
 import java.io.DataOutputStream
 import java.io.OutputStream
 
@@ -17,6 +16,7 @@ internal class BinaryWriting internal constructor(
         writePointsKeys(dataOutput)
         writePointsIndices(dataOutput)
         writeNormalsIndices(dataOutput)
+        writeTexCoordsKeys(dataOutput)
         writeTexCoordsIndices(dataOutput)
 
         points.writeArrayWithSize(pointsCount.toShort(), dataOutput)
@@ -46,9 +46,12 @@ internal class BinaryWriting internal constructor(
         normalsIndices.writeArrayWithSize(size.toShort(), output)
     }
 
+    private fun SimpleModel.writeTexCoordsKeys(output: DataOutputStream) {
+        texCoordsKeys.writeArrayWithSize(texCoordsKeys.size.toShort(), output)
+    }
+
     private fun SimpleModel.writeTexCoordsIndices(output: DataOutputStream) {
-        val size = texCoordsIndices.size / TEXCOORD.size
-        texCoordsIndices.writeArrayWithSize(size.toShort(), output)
+        texCoordsIndices.writeArray(output)
     }
 
     private fun SimpleModel.writeParts(output: DataOutputStream) {
